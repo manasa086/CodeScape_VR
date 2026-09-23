@@ -6,9 +6,13 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
+    path: Assets/CodeScape/Scenes/CodeScape.unity
+    guid: 58d2fd17e525b439681288f96b45310c
+  - enabled: 0
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 0d973afa0d88b214d9aa412876b5048c, type: 2}
     com.unity.xr.openxr.settings4: {fileID: 11400000, guid: 6a2f0c2e77e8bdf4ebd70d3793c8a965, type: 2}
+  m_UseUCBPForAssetBundles: 0
