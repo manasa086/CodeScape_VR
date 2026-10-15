@@ -32,3 +32,7 @@
 # Local editor automation helper used during development (not part of the project)
 /Assets/CodeScapeDevBridge/
 /Assets/CodeScapeDevBridge.meta
+
+# Unity crash dumps
+mono_crash.*
+/.utmp/
