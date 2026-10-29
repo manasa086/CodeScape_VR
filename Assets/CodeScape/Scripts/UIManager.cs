@@ -24,9 +24,12 @@ namespace CodeScape
         TextMeshPro infoBody;
         TextMeshPro statusText;
         PanelButton highlightButton;
+        PanelButton followButton;
+        bool followOn;
         readonly List<PanelButton> buttons = new List<PanelButton>();
 
-        const string IdleStatus = "Point at a component and pull the trigger to select it.";
+        string IdleStatus => "Point at a component and pull the trigger to select it.   " +
+                             $"<color=#9AA4B2>Follow Me is {(followOn ? "ON" : "OFF")} (B / Y button)</color>";
 
         void Awake()
         {
@@ -38,7 +41,9 @@ namespace CodeScape
             font = ArchitectureManager.Instance != null ? ArchitectureManager.Instance.Font : null;
             BuildInfoPanel();
             BuildStatusBoard();
+            followOn = FollowController.Instance != null && FollowController.Instance.Following;
             BuildConsole();
+            if (followButton != null) followButton.SetToggled(followOn);
             ShowNode(null);
             SetStatus(IdleStatus);
         }
@@ -100,6 +105,7 @@ namespace CodeScape
                 (ButtonAction.TraceRequest, $"Trace\n{traceName}", null, NodeStyle.Pulse),
                 (ButtonAction.SimulateFailure, "Simulate\nPayment Failure", null, NodeStyle.Failure),
                 (ButtonAction.Reset, "Reset\nScene", null, new Color(0.75f, 0.78f, 0.85f)),
+                (ButtonAction.ToggleFollow, "Follow Me\nOFF", "Follow Me\nON", NodeStyle.Success),
             };
 
             for (int i = 0; i < defs.Length; i++)
@@ -109,6 +115,7 @@ namespace CodeScape
                                            new Vector3(x, 0f, 0f), buttonMaterial, font);
                 buttons.Add(b);
                 if (defs[i].action == ButtonAction.HighlightDependencies) highlightButton = b;
+                if (defs[i].action == ButtonAction.ToggleFollow) followButton = b;
             }
         }
 
@@ -181,6 +188,12 @@ namespace CodeScape
             if (statusText != null) statusText.text = message;
         }
 
+        public void SetFollowToggled(bool on)
+        {
+            followOn = on;
+            if (followButton != null) followButton.SetToggled(on);
+        }
+
         public void SetHighlightToggled(bool on)
         {
             if (highlightButton != null) highlightButton.SetToggled(on);
@@ -202,6 +215,9 @@ namespace CodeScape
                     break;
                 case ButtonAction.Reset:
                     ResetScene();
+                    break;
+                case ButtonAction.ToggleFollow:
+                    FollowController.Instance?.Toggle();
                     break;
             }
         }

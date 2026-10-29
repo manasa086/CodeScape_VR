@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace CodeScape
 {
-    public enum ButtonAction { HighlightDependencies, TraceRequest, SimulateFailure, Reset }
+    public enum ButtonAction { HighlightDependencies, TraceRequest, SimulateFailure, Reset, ToggleFollow }
 
     // A physical 3D button on the table console. Selected with the controller ray or mouse.
     public class PanelButton : MonoBehaviour, IRayTarget

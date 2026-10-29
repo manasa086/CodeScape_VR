@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.XR;
 
 namespace CodeScape
 {
@@ -38,18 +37,9 @@ namespace CodeScape
             if (Application.platform == RuntimePlatform.Android) enabled = false;
         }
 
-        // A headset counts as active as soon as it is plugged in, even before its XR session has started, so the
-        // desktop camera never takes over (and tilts) the rig that the headset is about to track.
-        static bool HeadsetActive()
-        {
-            if (XRSettings.isDeviceActive) return true;
-            try { return OVRManager.isHmdPresent; }
-            catch { return false; }
-        }
-
         void Update()
         {
-            if (HeadsetActive())
+            if (HeadsetState.IsActive())   // a plugged-in headset counts, even before its XR session has started
             {
                 RayTargetUtil.UpdateHover(ref hover, null);
                 if (placed) RestoreRig();

@@ -59,22 +59,32 @@ namespace CodeScape.EditorTools
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
             SetupLighting(m.Sky);
-            BuildEnvironment(m);
+            var table = BuildEnvironment(m);
             var rig = BuildCameraRig();
 
             var architectureRoot = new GameObject("ArchitectureRoot").transform;
             architectureRoot.position = new Vector3(0.15f, TableHeight + TableSize.y * 0.5f, 1.0f);
 
             var ui = new GameObject("UI").transform;
-            var infoAnchor = CreateFacingAnchor(ui, "InfoPanelAnchor", new Vector3(0.98f, 1.22f, 1.0f));
-            var boardAnchor = CreateFacingAnchor(ui, "StatusBoardAnchor", new Vector3(0f, 1.26f, 1.64f));
+            // The status board and info panel sit in their own group so they can also rise and sink when the user
+            // looks up or down (FollowController).
+            var panelsRoot = new GameObject("PanelsRoot").transform;
+            panelsRoot.SetParent(ui, false);
+            var infoAnchor = CreateFacingAnchor(panelsRoot, "InfoPanelAnchor", new Vector3(0.98f, 1.22f, 1.0f));
+            var boardAnchor = CreateFacingAnchor(panelsRoot, "StatusBoardAnchor", new Vector3(0f, 1.26f, 1.64f));
             var consoleAnchor = new GameObject("ConsoleAnchor").transform;
             consoleAnchor.SetParent(ui, false);
             consoleAnchor.position = new Vector3(0f, TableHeight + TableSize.y * 0.5f + 0.012f, 0.52f);
             consoleAnchor.rotation = Quaternion.Euler(-15f, 0f, 0f);   // back edge raised, like a lectern
-            CreateBlock(consoleAnchor, "ConsoleBase", new Vector3(0f, -0.006f, 0f), new Vector3(0.9f, 0.012f, 0.11f), m.Console);
+            CreateBlock(consoleAnchor, "ConsoleBase", new Vector3(0f, -0.006f, 0f), new Vector3(1.12f, 0.012f, 0.11f), m.Console);
 
-            BuildManagers(m, font, architectureRoot, infoAnchor, boardAnchor, consoleAnchor, rig);
+            // Everything the user looks at (not the room) hangs under one root, which FollowController can move.
+            var contentRoot = new GameObject("ContentRoot").transform;
+            table.SetParent(contentRoot, true);
+            architectureRoot.SetParent(contentRoot, true);
+            ui.SetParent(contentRoot, true);
+
+            BuildManagers(m, font, architectureRoot, infoAnchor, boardAnchor, consoleAnchor, rig, contentRoot, panelsRoot);
 
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene, ScenePath);
@@ -177,7 +187,7 @@ namespace CodeScape.EditorTools
             light.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
         }
 
-        static void BuildEnvironment(Materials m)
+        static Transform BuildEnvironment(Materials m)
         {
             var env = new GameObject("Environment").transform;
 
@@ -201,6 +211,7 @@ namespace CodeScape.EditorTools
             foreach (var (x, z) in new[] { (-lx, -lz), (lx, -lz), (-lx, lz), (lx, lz) })
                 CreateBlock(table, "Leg", new Vector3(TableCenter.x + x, legH * 0.5f, TableCenter.z + z),
                             new Vector3(0.05f, legH, 0.05f), m.Leg);
+            return table;
         }
 
         static GameObject CreateBlock(Transform parent, string name, Vector3 localPos, Vector3 size, Material mat)
@@ -288,7 +299,8 @@ namespace CodeScape.EditorTools
         }
 
         static void BuildManagers(Materials m, TMP_FontAsset font, Transform architectureRoot,
-                                  Transform infoAnchor, Transform boardAnchor, Transform consoleAnchor, RigRefs rig)
+                                  Transform infoAnchor, Transform boardAnchor, Transform consoleAnchor, RigRefs rig,
+                                  Transform contentRoot, Transform panelsRoot)
         {
             var managers = new GameObject("Managers");
 
@@ -319,6 +331,13 @@ namespace CodeScape.EditorTools
             managers.AddComponent<AudioFeedback>();
             managers.AddComponent<DesktopInputFallback>();
             managers.AddComponent<ViewpointController>();
+            var follow = managers.AddComponent<FollowController>();
+            SetFields(follow, new Dictionary<string, Object>
+            {
+                { "contentRoot", contentRoot },
+                { "panelsRoot", panelsRoot },
+            });
+            managers.AddComponent<TrackingDiagnostics>();
 
             CreateRay(managers.transform, "LeftControllerRay", OVRInput.Controller.LTouch, rig.Left, m.Line);
             CreateRay(managers.transform, "RightControllerRay", OVRInput.Controller.RTouch, rig.Right, m.Line);

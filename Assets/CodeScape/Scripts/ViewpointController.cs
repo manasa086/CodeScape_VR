@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.XR;
 
 namespace CodeScape
 {
@@ -31,6 +30,12 @@ namespace CodeScape
         bool subscribed;
         bool wasPlacedOnce;
 
+        // Where the head is placed on the floor (x, z); FollowController keeps the content at this distance.
+        public Vector2 ViewPosition => viewPosition;
+
+        // True once the user has been placed in front of the table (so FollowController can start following).
+        public bool HasPlaced => wasPlacedOnce;
+
         void Start()
         {
             startTime = Time.time;
@@ -44,7 +49,7 @@ namespace CodeScape
         void Update()
         {
             if (rig == null && !FindRig()) return;
-            if (!HeadsetActive())
+            if (!HeadsetState.IsActive())
             {
                 xrActiveSince = -1f;
                 return;
@@ -75,13 +80,6 @@ namespace CodeScape
             head = cameraRig.centerEyeAnchor;
             authoredHeight = rig.position.y;   // the rig sits on the floor in the scene
             return true;
-        }
-
-        static bool HeadsetActive()
-        {
-            if (XRSettings.isDeviceActive) return true;
-            try { return OVRManager.isHmdPresent; }
-            catch { return false; }
         }
 
         void OnRecentered()
@@ -119,6 +117,7 @@ namespace CodeScape
 
             alignAt = -1f;
             wasPlacedOnce = true;
+            FollowController.Instance?.ResetPlacement();   // the user now faces the table: content back at its start spot
             Debug.Log($"[CodeScape] Viewpoint placed: head=({head.position.x:0.00}, {head.position.y:0.00}, {head.position.z:0.00}) " +
                       $"rig=({rig.position.x:0.00}, {rig.position.y:0.00}, {rig.position.z:0.00}) tracking={tracking}");
         }

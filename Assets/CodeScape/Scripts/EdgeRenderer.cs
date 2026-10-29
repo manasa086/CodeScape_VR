@@ -38,7 +38,7 @@ namespace CodeScape
         {
             var lr = go.AddComponent<LineRenderer>();
             lr.sharedMaterial = material;
-            lr.useWorldSpace = true;
+            lr.useWorldSpace = false;   // the arrows move with the table (FollowController moves it)
             lr.numCapVertices = 2;
             lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             lr.receiveShadows = false;
@@ -57,16 +57,17 @@ namespace CodeScape
             Vector3 start = a + dir * NodeClearance;
             Vector3 end = b - dir * NodeClearance;
 
+            // Points are worked out in world space, then stored in each line's own space so they move with the table.
             line.positionCount = 2;
-            line.SetPosition(0, start);
-            line.SetPosition(1, end);
+            line.SetPosition(0, line.transform.InverseTransformPoint(start));
+            line.SetPosition(1, line.transform.InverseTransformPoint(end));
 
             Vector3 side = Vector3.Cross(Vector3.up, dir) * (ArrowLength * 0.6f);
             Vector3 back = end - dir * ArrowLength;
             arrow.positionCount = 3;
-            arrow.SetPosition(0, back + side);
-            arrow.SetPosition(1, end);
-            arrow.SetPosition(2, back - side);
+            arrow.SetPosition(0, arrow.transform.InverseTransformPoint(back + side));
+            arrow.SetPosition(1, arrow.transform.InverseTransformPoint(end));
+            arrow.SetPosition(2, arrow.transform.InverseTransformPoint(back - side));
         }
 
         public void SetState(EdgeState state)
