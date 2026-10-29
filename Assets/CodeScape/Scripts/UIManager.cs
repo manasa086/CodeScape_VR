@@ -188,6 +188,7 @@ namespace CodeScape
 
         public void OnButton(ButtonAction action)
         {
+            Debug.Log($"[CodeScape] Button pressed: {action}");
             switch (action)
             {
                 case ButtonAction.HighlightDependencies:
