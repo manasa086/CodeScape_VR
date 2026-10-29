@@ -11,27 +11,52 @@ namespace CodeScape
     //   H - highlight   T - trace   F - trace with payment failure   R / Esc - reset
     public class DesktopInputFallback : MonoBehaviour
     {
-        [SerializeField] Vector3 startPosition = new Vector3(0.1f, 1.6f, -0.3f);
-        [SerializeField] float startPitch = 30f;
-        [SerializeField] float startYaw = 6f;
-        [SerializeField] float fieldOfView = 60f;
+        // Same spot as the headset start position (ViewpointController), so both views show the same picture.
+        [SerializeField] Vector3 startPosition = new Vector3(0.05f, 1.6f, -0.55f);
+        [SerializeField] float startPitch = 20f;
+        [SerializeField] float startYaw = 4f;
+        [SerializeField] float fieldOfView = 70f;
         [SerializeField] float lookSpeed = 0.15f;
         [SerializeField] float moveSpeed = 1f;
+        [Tooltip("Seconds to wait for an XR device to start before switching to desktop controls")]
+        [SerializeField] float xrStartupGrace = 1.5f;
 
         Camera cam;
         Transform rig;
+        Vector3 rigStartPosition;
+        Quaternion rigStartRotation;
+        float camStartFieldOfView;
         float yaw;
         float pitch;
         bool placed;
         IRayTarget hover;
 
+        void Awake()
+        {
+            // Desktop controls are for testing in the Editor only. On the headset the XR session can start a
+            // few frames after the scene, and moving the camera rig in that gap would shift the user's view.
+            if (Application.platform == RuntimePlatform.Android) enabled = false;
+        }
+
+        // A headset counts as active as soon as it is plugged in, even before its XR session has started, so the
+        // desktop camera never takes over (and tilts) the rig that the headset is about to track.
+        static bool HeadsetActive()
+        {
+            if (XRSettings.isDeviceActive) return true;
+            try { return OVRManager.isHmdPresent; }
+            catch { return false; }
+        }
+
         void Update()
         {
-            if (XRSettings.isDeviceActive)
+            if (HeadsetActive())
             {
                 RayTargetUtil.UpdateHover(ref hover, null);
+                if (placed) RestoreRig();
                 return;
             }
+
+            if (Time.timeSinceLevelLoad < xrStartupGrace) return;
 
             if (cam == null)
             {
@@ -90,9 +115,25 @@ namespace CodeScape
             rig.rotation = Quaternion.Euler(pitch, yaw, 0f);
         }
 
+        // An XR device started after desktop controls took over: give the headset back its own pose.
+        void RestoreRig()
+        {
+            placed = false;
+            if (rig != null)
+            {
+                rig.position = rigStartPosition;
+                rig.rotation = rigStartRotation;
+            }
+            if (cam != null) cam.fieldOfView = camStartFieldOfView;
+            Debug.Log("[CodeScape] XR device active: desktop controls turned off.");
+        }
+
         void PlaceCamera()
         {
             placed = true;
+            rigStartPosition = rig.position;
+            rigStartRotation = rig.rotation;
+            camStartFieldOfView = cam.fieldOfView;
             yaw = startYaw;
             pitch = startPitch;
             cam.fieldOfView = fieldOfView;

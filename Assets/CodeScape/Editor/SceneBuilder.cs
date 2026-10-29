@@ -24,7 +24,8 @@ namespace CodeScape.EditorTools
         const float TableHeight = 0.75f;
         static readonly Vector3 TableCenter = new Vector3(0f, TableHeight, 0.95f);
         static readonly Vector3 TableSize = new Vector3(1.7f, 0.05f, 1.1f);
-        static readonly Vector3 EyePoint = new Vector3(0f, 1.6f, 0f);
+        // Where the viewer's head starts (see ViewpointController): panels are turned toward this point.
+        static readonly Vector3 EyePoint = new Vector3(0f, 1.6f, -0.45f);
 
         [MenuItem("CodeScape/Build Scene", priority = 0)]
         public static void BuildFromMenu()
@@ -317,6 +318,7 @@ namespace CodeScape.EditorTools
             managers.AddComponent<RequestSimulator>();
             managers.AddComponent<AudioFeedback>();
             managers.AddComponent<DesktopInputFallback>();
+            managers.AddComponent<ViewpointController>();
 
             CreateRay(managers.transform, "LeftControllerRay", OVRInput.Controller.LTouch, rig.Left, m.Line);
             CreateRay(managers.transform, "RightControllerRay", OVRInput.Controller.RTouch, rig.Right, m.Line);
